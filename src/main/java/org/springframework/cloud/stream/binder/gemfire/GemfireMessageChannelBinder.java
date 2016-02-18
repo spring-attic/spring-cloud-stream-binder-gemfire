@@ -30,12 +30,10 @@ import com.gemstone.gemfire.cache.asyncqueue.AsyncEventListener;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueue;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueueFactory;
 
-import org.springframework.beans.BeansException;
 import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
-import org.springframework.context.ApplicationContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
 import org.springframework.messaging.Message;
@@ -84,11 +82,6 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel> 
 	 * Name of default consumer group.
 	 */
 	public static final String DEFAULT_CONSUMER_GROUP = "default";
-
-	/**
-	 * Application context that created this object.
-	 */
-	private volatile ApplicationContext applicationContext;
 
 	/**
 	 * GemFire peer-to-peer cache.
@@ -283,11 +276,6 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel> 
 	}
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = applicationContext;
-	}
-
-	@Override
 	protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel inputChannel, Properties properties) {
 		if (StringUtils.isEmpty(group)) {
 			group = DEFAULT_CONSUMER_GROUP;
@@ -297,7 +285,7 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel> 
 		AsyncEventListeningMessageProducer messageProducer = new AsyncEventListeningMessageProducer();
 		messageProducer.setOutputChannel(inputChannel);
 		messageProducer.setExpressionPayload(parser.parseExpression("deserializedValue"));
-		messageProducer.setBeanFactory(this.applicationContext);
+		messageProducer.setBeanFactory(this.getBeanFactory());
 		messageProducer.afterPropertiesSet();
 
 		AsyncEventQueue queue = createAsyncEventQueue(messageRegionName, messageProducer);
@@ -315,8 +303,10 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel> 
 	public Binding<MessageChannel> bindProducer(String name, MessageChannel outboundBindTarget, Properties properties) {
 		Assert.isInstanceOf(SubscribableChannel.class, outboundBindTarget);
 
+		DefaultBindingPropertiesAccessor bindingProperties = new DefaultBindingPropertiesAccessor(properties);
 		SendingHandler handler = new SendingHandler(this.cache, this.consumerGroupsRegion,
-				name, this.producerRegionType);
+				name, this.producerRegionType, getBeanFactory(),
+				this.evaluationContext, this.partitionSelector, bindingProperties);
 		handler.start();
 
 		SubscribableChannel subscribableChannel = (SubscribableChannel) outboundBindTarget;
@@ -326,7 +316,7 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel> 
 
 		return DefaultBinding.forProducer(name, outboundBindTarget,
 				new EventDrivenConsumer(subscribableChannel, handler),
-				new DefaultBindingPropertiesAccessor(properties), this);
+				bindingProperties, this);
 	}
 
 	@Override

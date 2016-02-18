@@ -42,8 +42,11 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.cloud.stream.binder.BinderPropertyKeys;
+import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.data.gemfire.CacheFactoryBean;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
@@ -92,7 +95,17 @@ public class GemfireBinderTests {
 	 */
 	@Test
 	public void testMessageSendReceive() throws Exception {
-		testMessageSendReceive(null);
+		testMessageSendReceive(null, false);
+	}
+
+	/**
+	 * Test usage of partition selector.
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void testPartitionedMessageSendReceive() throws Exception {
+		testMessageSendReceive(null, true);
 	}
 
 	/**
@@ -102,7 +115,7 @@ public class GemfireBinderTests {
 	 */
 	@Test
 	public void testMessageSendReceiveConsumerGroups() throws Exception {
-		testMessageSendReceive(new String[]{"a", "b"});
+		testMessageSendReceive(new String[]{"a", "b"}, false);
 	}
 
 	/**
@@ -111,7 +124,7 @@ public class GemfireBinderTests {
 	 * @param groups consumer groups; may be {@code null}
 	 * @throws Exception
 	 */
-	private void testMessageSendReceive(String[] groups) throws Exception {
+	private void testMessageSendReceive(String[] groups, boolean partitioned) throws Exception {
 		LocatorLauncher locatorLauncher = null;
 		JavaApplication[] consumers = new JavaApplication[groups == null ? 1 : groups.length];
 		JavaApplication producer = null;
@@ -134,10 +147,18 @@ public class GemfireBinderTests {
 				waitForConsumer(consumer);
 			}
 
-			producer = launch(Producer.class, null, null);
+			Properties producerProperties = new Properties();
+			if (partitioned) {
+				producerProperties.setProperty("partitioned", "true");
+			}
+			producer = launch(Producer.class, producerProperties, null);
 
 			for (JavaApplication consumer : consumers) {
 				assertEquals(MESSAGE_PAYLOAD, waitForMessage(consumer));
+			}
+
+			if (partitioned) {
+				assertTrue(partitionSelectorUsed(producer));
 			}
 		}
  		finally {
@@ -217,6 +238,10 @@ public class GemfireBinderTests {
 		assertTrue("Consumer not bound", consumer.submit(new ConsumerBoundChecker()));
 	}
 
+	private boolean partitionSelectorUsed(JavaApplication producer) throws InterruptedException {
+		return producer.submit(new ProducerPartitionSelectorChecker());
+	}
+
 	/**
 	 * Block the executing thread until a message is received by the
 	 * consumer application, or until {@value #TIMEOUT} milliseconds elapses.
@@ -293,24 +318,46 @@ public class GemfireBinderTests {
 		return bean.getObject();
 	}
 
+	public static class StubPartitionSelectorStrategy implements PartitionSelectorStrategy {
+		public volatile boolean invoked = false;
+
+		@Override
+		public int selectPartition(Object key, int partitionCount) {
+			logger.warn("Selecting partition for key {}; partition count: {}", key, partitionCount);
+			System.out.printf("Selecting partition for key %s; partition count: %d", key, partitionCount);
+			invoked = true;
+			return 1;
+		}
+	}
+
 	/**
 	 * Producer application that binds a channel to a {@link GemfireMessageChannelBinder}
 	 * and sends a test message.
 	 */
 	public static class Producer {
+		private static volatile StubPartitionSelectorStrategy partitionSelectorStrategy =
+				new StubPartitionSelectorStrategy();
+
 		public static void main(String[] args) throws Exception {
 			GemfireMessageChannelBinder binder = new GemfireMessageChannelBinder(createCache());
 			binder.setApplicationContext(new GenericApplicationContext());
+			binder.setIntegrationEvaluationContext(new StandardEvaluationContext());
+			if (Boolean.getBoolean("partitioned")) {
+				System.out.println("setting partition selector");
+				binder.setPartitionSelector(partitionSelectorStrategy);
+			}
 			binder.afterPropertiesSet();
 
 			SubscribableChannel producerChannel = new ExecutorSubscribableChannel();
 
-			binder.bindProducer(BINDING_NAME, producerChannel, new Properties());
+			Properties properties = new Properties();
+			properties.setProperty(BinderPropertyKeys.PARTITION_KEY_EXPRESSION, "payload");
+			binder.bindProducer(BINDING_NAME, producerChannel, properties);
 
 			Message<String> message = new GenericMessage<>(MESSAGE_PAYLOAD);
 			producerChannel.send(message);
 
-			Thread.sleep(1000);
+			Thread.sleep(Long.MAX_VALUE);
 		}
 	}
 
@@ -339,6 +386,7 @@ public class GemfireBinderTests {
 		public static void main(String[] args) throws Exception {
 			GemfireMessageChannelBinder binder = new GemfireMessageChannelBinder(createCache());
 			binder.setApplicationContext(new GenericApplicationContext());
+			binder.setIntegrationEvaluationContext(new StandardEvaluationContext());
 			binder.setBatchSize(1);
 			binder.afterPropertiesSet();
 
@@ -371,6 +419,13 @@ public class GemfireBinderTests {
 		@Override
 		public String call() throws Exception {
 			return Consumer.messagePayload;
+		}
+	}
+
+	public static class ProducerPartitionSelectorChecker implements RemoteCallable<Boolean> {
+		@Override
+		public Boolean call() throws Exception {
+			return Producer.partitionSelectorStrategy.invoked;
 		}
 	}
 
