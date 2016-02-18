@@ -29,16 +29,13 @@ import com.gemstone.gemfire.cache.Scope;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventListener;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueue;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueueFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
 import org.springframework.messaging.Message;
@@ -61,8 +58,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Patrick Peralta
  */
-public class GemfireMessageChannelBinder implements Binder<MessageChannel>, ApplicationContextAware, InitializingBean {
-	private static final Logger logger = LoggerFactory.getLogger(GemfireMessageChannelBinder.class);
+public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 	/**
 	 * SPeL parser.
@@ -292,15 +288,14 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 	}
 
 	@Override
-	public Binding<MessageChannel> bindConsumer(String name, String group,
-			MessageChannel inboundBindTarget, Properties properties) {
+	protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel inputChannel, Properties properties) {
 		if (StringUtils.isEmpty(group)) {
 			group = DEFAULT_CONSUMER_GROUP;
 		}
 		String messageRegionName = createMessageRegionName(name, group);
 
 		AsyncEventListeningMessageProducer messageProducer = new AsyncEventListeningMessageProducer();
-		messageProducer.setOutputChannel(inboundBindTarget);
+		messageProducer.setOutputChannel(inputChannel);
 		messageProducer.setExpressionPayload(parser.parseExpression("deserializedValue"));
 		messageProducer.setBeanFactory(this.applicationContext);
 		messageProducer.afterPropertiesSet();
@@ -312,8 +307,8 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 		addConsumerGroup(name, group);
 		messageProducer.start();
 
-		return Binding.forConsumer(name, group, messageProducer, inboundBindTarget,
-				new DefaultBindingPropertiesAccessor(properties));
+		return DefaultBinding.forConsumer(name, group, messageProducer, inputChannel,
+				new DefaultBindingPropertiesAccessor(properties), this);
 	}
 
 	@Override
@@ -329,13 +324,13 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 
 		this.sendingHandlerMap.put(name, handler);
 
-		return Binding.forProducer(name, outboundBindTarget,
+		return DefaultBinding.forProducer(name, outboundBindTarget,
 				new EventDrivenConsumer(subscribableChannel, handler),
-				new DefaultBindingPropertiesAccessor(properties));
+				new DefaultBindingPropertiesAccessor(properties), this);
 	}
 
 	@Override
-	public void unbind(Binding<MessageChannel> binding) {
+	protected void afterUnbind(DefaultBinding<MessageChannel> binding) {
 		switch (binding.getType()) {
 			case producer:
 				SendingHandler handler = this.sendingHandlerMap.remove(binding.getName());
