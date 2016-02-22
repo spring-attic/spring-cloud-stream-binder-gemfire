@@ -35,6 +35,7 @@ import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.integration.endpoint.AbstractEndpoint;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -295,8 +296,8 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel> 
 		addConsumerGroup(name, group);
 		messageProducer.start();
 
-		return DefaultBinding.forConsumer(name, group, messageProducer, inputChannel,
-				new DefaultBindingPropertiesAccessor(properties), this);
+		return bindingForConsumer(name, group, inputChannel, messageProducer,
+				new DefaultBindingPropertiesAccessor(properties));
 	}
 
 	@Override
@@ -314,29 +315,43 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel> 
 
 		this.sendingHandlerMap.put(name, handler);
 
-		return DefaultBinding.forProducer(name, outboundBindTarget,
-				new EventDrivenConsumer(subscribableChannel, handler),
-				bindingProperties, this);
+		return bindingForProducer(name, outboundBindTarget,
+				new EventDrivenConsumer(subscribableChannel, handler), bindingProperties);
 	}
 
-	@Override
-	protected void afterUnbind(DefaultBinding<MessageChannel> binding) {
-		switch (binding.getType()) {
-			case producer:
-				SendingHandler handler = this.sendingHandlerMap.remove(binding.getName());
+	private DefaultBinding<MessageChannel> bindingForProducer(String name, MessageChannel target,
+			AbstractEndpoint endpoint, DefaultBindingPropertiesAccessor properties) {
+
+		return new DefaultBinding<MessageChannel>(name, /*group*/null, target,
+				endpoint, properties) {
+
+			@Override
+			protected void afterUnbind() {
+				SendingHandler handler = sendingHandlerMap.remove(getName());
 				if (handler != null) {
 					handler.stop();
 				}
-				break;
-			case consumer:
-				Region<MessageKey, Message<?>> region = this.regionMap.remove(
-						createMessageRegionName(binding.getName(), binding.getGroup()));
+			}
+		};
+	}
+
+	private DefaultBinding<MessageChannel> bindingForConsumer(String name, String group,
+			MessageChannel target, AbstractEndpoint endpoint,
+			DefaultBindingPropertiesAccessor properties) {
+
+		return new DefaultBinding<MessageChannel>(name, group, target, endpoint, properties) {
+
+			@Override
+			protected void afterUnbind() {
+				Region<MessageKey, Message<?>> region = regionMap.remove(
+						createMessageRegionName(getName(), getGroup()));
 				if (region != null) {
 					region.close();
 				}
 
-				removeConsumerGroup(binding.getName(), binding.getGroup());
-				break;
-		}
+				removeConsumerGroup(getName(), getGroup());
+			}
+		};
 	}
+
 }
