@@ -169,8 +169,7 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel> 
 	}
 
 	@Override
-	public void afterPropertiesSet() throws Exception {
-		super.afterPropertiesSet();
+	public void onInit() throws Exception {
 		RegionFactory<String, ConsumerGroupTracker> regionFactory = this.cache.createRegionFactory(RegionShortcut.REPLICATE);
 		this.consumerGroupsRegion = regionFactory.setScope(Scope.GLOBAL).create(CONSUMER_GROUPS_REGION);
 	}
