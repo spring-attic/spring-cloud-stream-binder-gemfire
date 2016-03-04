@@ -27,6 +27,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.gemstone.gemfire.cache.Cache;
+import com.gemstone.gemfire.cache.PartitionAttributes;
 import com.gemstone.gemfire.cache.Region;
 import com.gemstone.gemfire.cache.RegionFactory;
 import com.gemstone.gemfire.cache.RegionShortcut;
@@ -63,6 +64,11 @@ public class SendingHandler extends AbstractMessageHandler implements Lifecycle 
 	 * Type of region to create for sending messages.
 	 */
 	private final RegionShortcut producerRegionType;
+
+	/**
+	 * Attributes for message regions.
+	 */
+	private final PartitionAttributes partitionAttributes;
 
 	/**
 	 * Sequence number for generating unique message IDs.
@@ -134,6 +140,7 @@ public class SendingHandler extends AbstractMessageHandler implements Lifecycle 
 	 * @param consumerGroupsRegion replicated region used to hold consumer group registrations
 	 * @param name binding name
 	 * @param producerRegionType type of region to create for sending messages
+	 * @param partitionAttributes partition attributes for message regions
 	 * @param beanFactory bean factory
 	 * @param evaluationContext evaluation context
 	 * @param partitionSelector strategy for selecting partitions for messages; may be {@code null}.
@@ -143,6 +150,7 @@ public class SendingHandler extends AbstractMessageHandler implements Lifecycle 
 			Region<String, ConsumerGroupTracker> consumerGroupsRegion,
 			String name,
 			RegionShortcut producerRegionType,
+			PartitionAttributes partitionAttributes,
 			ConfigurableListableBeanFactory beanFactory,
 			EvaluationContext evaluationContext,
 			PartitionSelectorStrategy partitionSelector,
@@ -150,6 +158,7 @@ public class SendingHandler extends AbstractMessageHandler implements Lifecycle 
 		Assert.notNull(consumerGroupsRegion);
 		Assert.notNull(name);
 		Assert.notNull(producerRegionType);
+		Assert.notNull(partitionAttributes);
 		Assert.notNull(beanFactory);
 		Assert.notNull(evaluationContext);
 		Assert.notNull(properties);
@@ -157,6 +166,7 @@ public class SendingHandler extends AbstractMessageHandler implements Lifecycle 
 		this.cache = cache;
 		this.name = name;
 		this.producerRegionType = producerRegionType;
+		this.partitionAttributes = partitionAttributes;
 		this.consumerGroupsRegion = consumerGroupsRegion;
 		this.pid = cache.getDistributedSystem().getDistributedMember().getProcessId();
 		this.beanFactory = beanFactory;
@@ -175,7 +185,8 @@ public class SendingHandler extends AbstractMessageHandler implements Lifecycle 
 	 */
 	private Region<MessageKey, Message<?>> createProducerMessageRegion(String regionName) {
 		RegionFactory<MessageKey, Message<?>> factory = this.cache.createRegionFactory(this.producerRegionType);
-		return factory.addAsyncEventQueueId(regionName + GemfireMessageChannelBinder.QUEUE_POSTFIX)
+		return factory.setPartitionAttributes(this.partitionAttributes)
+				.addAsyncEventQueueId(regionName + GemfireMessageChannelBinder.QUEUE_POSTFIX)
 				.create(regionName);
 	}
 

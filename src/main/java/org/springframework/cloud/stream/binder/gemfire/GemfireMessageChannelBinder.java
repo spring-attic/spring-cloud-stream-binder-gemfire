@@ -22,6 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 
 import com.gemstone.gemfire.cache.Cache;
+import com.gemstone.gemfire.cache.PartitionAttributes;
+import com.gemstone.gemfire.cache.PartitionAttributesFactory;
 import com.gemstone.gemfire.cache.Region;
 import com.gemstone.gemfire.cache.RegionFactory;
 import com.gemstone.gemfire.cache.RegionShortcut;
@@ -29,6 +31,8 @@ import com.gemstone.gemfire.cache.Scope;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventListener;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueue;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueueFactory;
+import com.gemstone.gemfire.cache.partition.PartitionListener;
+import com.gemstone.gemfire.cache.partition.PartitionListenerAdapter;
 
 import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.Binding;
@@ -200,7 +204,28 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel> 
 	 */
 	private Region<MessageKey, Message<?>> createConsumerMessageRegion(String regionName, String queueId)  {
 		RegionFactory<MessageKey, Message<?>> regionFactory = this.cache.createRegionFactory(getConsumerRegionType());
-		return regionFactory.addAsyncEventQueueId(queueId).create(regionName);
+		return regionFactory.setPartitionAttributes(createPartitionAttributes())
+				.addAsyncEventQueueId(queueId).create(regionName);
+	}
+
+	/**
+	 * Create {@link PartitionAttributes} for partitioned regions used for
+	 * storing messages.
+	 *
+	 * @return partition attributes for message regions
+	 */
+	protected PartitionAttributes createPartitionAttributes() {
+		return new PartitionAttributesFactory().addPartitionListener(new PartitionListenerAdapter() {
+			@Override
+			public void afterBucketRemoved(int i, Iterable<?> iterable) {
+				logger.debug("Bucket {} removed", i);
+			}
+
+			@Override
+			public void afterBucketCreated(int i, Iterable<?> iterable) {
+				logger.debug("Bucket {} created", i);
+			}
+		}).create();
 	}
 
 	/**
@@ -306,7 +331,7 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel> 
 
 		DefaultBindingPropertiesAccessor bindingProperties = new DefaultBindingPropertiesAccessor(properties);
 		SendingHandler handler = new SendingHandler(this.cache, this.consumerGroupsRegion,
-				name, this.producerRegionType, getBeanFactory(),
+				name, this.producerRegionType, createPartitionAttributes(), getBeanFactory(),
 				this.evaluationContext, this.partitionSelector, bindingProperties);
 		handler.start();
 
