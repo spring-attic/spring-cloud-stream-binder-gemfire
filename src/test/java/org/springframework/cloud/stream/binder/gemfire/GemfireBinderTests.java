@@ -43,8 +43,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.cloud.stream.binder.BinderPropertyKeys;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.data.gemfire.CacheFactoryBean;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -350,8 +351,8 @@ public class GemfireBinderTests {
 
 			SubscribableChannel producerChannel = new ExecutorSubscribableChannel();
 
-			Properties properties = new Properties();
-			properties.setProperty(BinderPropertyKeys.PARTITION_KEY_EXPRESSION, "payload");
+			ProducerProperties properties = new ProducerProperties();
+			properties.setPartitionKeyExpression("payload");
 			binder.bindProducer(BINDING_NAME, producerChannel, properties);
 
 			Message<String> message = new GenericMessage<>(MESSAGE_PAYLOAD);
@@ -401,7 +402,7 @@ public class GemfireBinderTests {
 			if (args.length > 0) {
 				group = args[0];
 			}
-			binder.bindConsumer(BINDING_NAME, group, consumerChannel, new Properties());
+			binder.bindConsumer(BINDING_NAME, group, consumerChannel, new ConsumerProperties());
 			isBound = true;
 
 			Thread.sleep(Long.MAX_VALUE);

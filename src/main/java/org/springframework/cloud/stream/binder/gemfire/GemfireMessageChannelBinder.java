@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binder.gemfire;
 
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 
@@ -31,13 +30,13 @@ import com.gemstone.gemfire.cache.Scope;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventListener;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueue;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueueFactory;
-import com.gemstone.gemfire.cache.partition.PartitionListener;
 import com.gemstone.gemfire.cache.partition.PartitionListenerAdapter;
 
 import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.DefaultBinding;
-import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.endpoint.AbstractEndpoint;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
@@ -61,7 +60,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Patrick Peralta
  */
-public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel> {
+public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel, ConsumerProperties, ProducerProperties> {
 
 	/**
 	 * SPeL parser.
@@ -302,7 +301,7 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel> 
 	}
 
 	@Override
-	protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel inputChannel, Properties properties) {
+	protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel inputChannel, ConsumerProperties properties) {
 		if (StringUtils.isEmpty(group)) {
 			group = DEFAULT_CONSUMER_GROUP;
 		}
@@ -321,18 +320,16 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel> 
 		addConsumerGroup(name, group);
 		messageProducer.start();
 
-		return bindingForConsumer(name, group, inputChannel, messageProducer,
-				new DefaultBindingPropertiesAccessor(properties));
+		return bindingForConsumer(name, group, inputChannel, messageProducer, properties);
 	}
 
 	@Override
-	public Binding<MessageChannel> bindProducer(String name, MessageChannel outboundBindTarget, Properties properties) {
+	public Binding<MessageChannel> doBindProducer(String name, MessageChannel outboundBindTarget, ProducerProperties properties) {
 		Assert.isInstanceOf(SubscribableChannel.class, outboundBindTarget);
 
-		DefaultBindingPropertiesAccessor bindingProperties = new DefaultBindingPropertiesAccessor(properties);
 		SendingHandler handler = new SendingHandler(this.cache, this.consumerGroupsRegion,
 				name, this.producerRegionType, createPartitionAttributes(), getBeanFactory(),
-				this.evaluationContext, this.partitionSelector, bindingProperties);
+				this.evaluationContext, this.partitionSelector, properties);
 		handler.start();
 
 		SubscribableChannel subscribableChannel = (SubscribableChannel) outboundBindTarget;
@@ -341,11 +338,11 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel> 
 		this.sendingHandlerMap.put(name, handler);
 
 		return bindingForProducer(name, outboundBindTarget,
-				new EventDrivenConsumer(subscribableChannel, handler), bindingProperties);
+				new EventDrivenConsumer(subscribableChannel, handler), properties);
 	}
 
 	private DefaultBinding<MessageChannel> bindingForProducer(String name, MessageChannel target,
-			AbstractEndpoint endpoint, DefaultBindingPropertiesAccessor properties) {
+			AbstractEndpoint endpoint, ProducerProperties properties) {
 
 		return new DefaultBinding<MessageChannel>(name, /*group*/null, target,
 				endpoint, properties) {
@@ -362,7 +359,7 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel> 
 
 	private DefaultBinding<MessageChannel> bindingForConsumer(String name, String group,
 			MessageChannel target, AbstractEndpoint endpoint,
-			DefaultBindingPropertiesAccessor properties) {
+			ConsumerProperties properties) {
 
 		return new DefaultBinding<MessageChannel>(name, group, target, endpoint, properties) {
 

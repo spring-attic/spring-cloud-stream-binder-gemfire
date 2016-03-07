@@ -34,9 +34,9 @@ import com.gemstone.gemfire.cache.RegionShortcut;
 import com.gemstone.gemfire.cache.partition.PartitionRegionHelper;
 
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.context.Lifecycle;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.integration.handler.AbstractMessageHandler;
@@ -120,7 +120,7 @@ public class SendingHandler extends AbstractMessageHandler implements Lifecycle 
 	/**
 	 * Binder properties.
 	 */
-	private final DefaultBindingPropertiesAccessor properties;
+	private final ProducerProperties properties;
 
 	/**
 	 * Strategy for selecting partitions for messages. May be {@code null}.
@@ -154,7 +154,7 @@ public class SendingHandler extends AbstractMessageHandler implements Lifecycle 
 			ConfigurableListableBeanFactory beanFactory,
 			EvaluationContext evaluationContext,
 			PartitionSelectorStrategy partitionSelector,
-			DefaultBindingPropertiesAccessor properties) {
+			ProducerProperties properties) {
 		Assert.notNull(consumerGroupsRegion);
 		Assert.notNull(name);
 		Assert.notNull(producerRegionType);
