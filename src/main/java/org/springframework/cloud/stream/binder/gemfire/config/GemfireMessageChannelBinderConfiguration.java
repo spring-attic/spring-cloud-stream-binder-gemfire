@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.gemfire.config;
 
+import java.util.Properties;
+
 import com.gemstone.gemfire.cache.Cache;
 import com.gemstone.gemfire.cache.RegionShortcut;
 import org.slf4j.Logger;
@@ -26,26 +28,59 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.stream.binder.gemfire.GemfireMessageChannelBinder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.ImportResource;
+import org.springframework.data.gemfire.CacheFactoryBean;
 
 /**
  * @author Patrick Peralta
  */
 @Configuration
-@ImportResource("classpath:/META-INF/spring-cloud-stream/gemfire-binder-cache.xml")
 @EnableConfigurationProperties(GemfireBinderConfigurationProperties.class)
 public class GemfireMessageChannelBinderConfiguration {
 	private static final Logger logger = LoggerFactory.getLogger(GemfireMessageChannelBinderConfiguration.class);
 
 	@Autowired
-	public Cache cache;
-
-	@Autowired
 	public GemfireBinderConfigurationProperties properties;
+
+
+	@Bean
+	Properties gemfireProperties() {
+		Properties gemfireProperties = new Properties();
+		gemfireProperties.setProperty("mcast-port", String.valueOf(properties.getMcastPort()));
+		gemfireProperties.setProperty("log-level", properties.getLogLevel());
+		gemfireProperties.setProperty("locators", properties.getLocators());
+
+		return gemfireProperties;
+	}
+
+	@Bean
+	CacheFactoryBean gemfireCacheBean() {
+		CacheFactoryBean gemfireCache = new CacheFactoryBean();
+
+		gemfireCache.setClose(true);
+		gemfireCache.setLazyInitialize(true);
+		gemfireCache.setProperties(gemfireProperties());
+		gemfireCache.setUseBeanFactoryLocator(false);
+
+		return gemfireCache;
+	}
+
+	private Cache gemfireCache() {
+		try {
+			return gemfireCacheBean().getObject();
+		}
+		catch (Exception e) {
+			if (e instanceof RuntimeException) {
+				throw (RuntimeException) e;
+			}
+			else {
+				throw new RuntimeException(e);
+			}
+		}
+	}
 
 	@Bean
 	public GemfireMessageChannelBinder messageChannelBinder() {
-		GemfireMessageChannelBinder binder = new GemfireMessageChannelBinder(this.cache);
+		GemfireMessageChannelBinder binder = new GemfireMessageChannelBinder(gemfireCache());
 		binder.setBatchSize(this.properties.getBatchSize());
 		try {
 			binder.setConsumerRegionType(RegionShortcut.valueOf(this.properties.getConsumerRegionType()));
