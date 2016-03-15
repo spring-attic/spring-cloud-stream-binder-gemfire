@@ -64,23 +64,9 @@ public class GemfireMessageChannelBinderConfiguration {
 		return gemfireCache;
 	}
 
-	private Cache gemfireCache() {
-		try {
-			return gemfireCacheBean().getObject();
-		}
-		catch (Exception e) {
-			if (e instanceof RuntimeException) {
-				throw (RuntimeException) e;
-			}
-			else {
-				throw new RuntimeException(e);
-			}
-		}
-	}
-
 	@Bean
-	public GemfireMessageChannelBinder messageChannelBinder() {
-		GemfireMessageChannelBinder binder = new GemfireMessageChannelBinder(gemfireCache());
+	public GemfireMessageChannelBinder messageChannelBinder(Cache gemfireCache) {
+		GemfireMessageChannelBinder binder = new GemfireMessageChannelBinder(gemfireCache);
 		binder.setBatchSize(this.properties.getBatchSize());
 		try {
 			binder.setConsumerRegionType(RegionShortcut.valueOf(this.properties.getConsumerRegionType()));

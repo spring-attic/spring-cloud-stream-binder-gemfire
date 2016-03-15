@@ -22,7 +22,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @author Patrick Peralta
  */
 @ConfigurationProperties(prefix = "spring.cloud.stream.binder.gemfire")
-public class GemfireBinderConfigurationProperties {
+public class GemfireBinderConfigurationProperties extends GemfireProperties {
 
 	private int batchSize = 100;
 
@@ -31,12 +31,6 @@ public class GemfireBinderConfigurationProperties {
 	private String producerRegionType = "PARTITION_PROXY";
 
 	private boolean persistentQueue = false;
-
-	private String locators = "localhost[7777]";
-
-	private int mcastPort = 0;
-
-	private String logLevel = "warn";
 
 	public int getBatchSize() {
 		return batchSize;
@@ -70,27 +64,4 @@ public class GemfireBinderConfigurationProperties {
 		this.persistentQueue = persistentQueue;
 	}
 
-	public String getLocators() {
-		return locators;
-	}
-
-	public void setLocators(String locators) {
-		this.locators = locators;
-	}
-
-	public int getMcastPort() {
-		return mcastPort;
-	}
-
-	public void setMcastPort(int mcastPort) {
-		this.mcastPort = mcastPort;
-	}
-
-	public String getLogLevel() {
-		return logLevel;
-	}
-
-	public void setLogLevel(String logLevel) {
-		this.logLevel = logLevel;
-	}
 }
