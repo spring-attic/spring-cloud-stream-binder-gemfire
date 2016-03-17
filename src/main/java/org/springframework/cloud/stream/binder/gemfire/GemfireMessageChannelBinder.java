@@ -60,7 +60,8 @@ import org.springframework.util.StringUtils;
  *
  * @author Patrick Peralta
  */
-public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel, ConsumerProperties, ProducerProperties> {
+public class GemfireMessageChannelBinder
+		extends AbstractBinder<MessageChannel, ConsumerProperties, ProducerProperties> {
 
 	/**
 	 * SPeL parser.
@@ -201,7 +202,7 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel, 
 	 *
 	 * @return region for consuming messages
 	 */
-	private Region<MessageKey, Message<?>> createConsumerMessageRegion(String regionName, String queueId)  {
+	protected Region<MessageKey, Message<?>> createConsumerMessageRegion(String regionName, String queueId)  {
 		RegionFactory<MessageKey, Message<?>> regionFactory = this.cache.createRegionFactory(getConsumerRegionType());
 		return regionFactory.setPartitionAttributes(createPartitionAttributes())
 				.addAsyncEventQueueId(queueId).create(regionName);
@@ -301,7 +302,8 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel, 
 	}
 
 	@Override
-	protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel inputChannel, ConsumerProperties properties) {
+	protected Binding<MessageChannel> doBindConsumer(String name, String group,
+			MessageChannel inputChannel, ConsumerProperties properties) {
 		if (StringUtils.isEmpty(group)) {
 			group = DEFAULT_CONSUMER_GROUP;
 		}
@@ -320,11 +322,12 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel, 
 		addConsumerGroup(name, group);
 		messageProducer.start();
 
-		return bindingForConsumer(name, group, inputChannel, messageProducer, properties);
+		return bindingForConsumer(name, group, inputChannel, messageProducer);
 	}
 
 	@Override
-	public Binding<MessageChannel> doBindProducer(String name, MessageChannel outboundBindTarget, ProducerProperties properties) {
+	protected Binding<MessageChannel> doBindProducer(String name,
+			MessageChannel outboundBindTarget, ProducerProperties properties) {
 		Assert.isInstanceOf(SubscribableChannel.class, outboundBindTarget);
 
 		SendingHandler handler = new SendingHandler(this.cache, this.consumerGroupsRegion,
@@ -338,11 +341,11 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel, 
 		this.sendingHandlerMap.put(name, handler);
 
 		return bindingForProducer(name, outboundBindTarget,
-				new EventDrivenConsumer(subscribableChannel, handler), properties);
+				new EventDrivenConsumer(subscribableChannel, handler));
 	}
 
 	private DefaultBinding<MessageChannel> bindingForProducer(String name, MessageChannel target,
-			AbstractEndpoint endpoint, ProducerProperties properties) {
+			AbstractEndpoint endpoint) {
 
 		return new DefaultBinding<MessageChannel>(name, /*group*/null, target, endpoint) {
 
@@ -357,8 +360,7 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel, 
 	}
 
 	private DefaultBinding<MessageChannel> bindingForConsumer(String name, String group,
-			MessageChannel target, AbstractEndpoint endpoint,
-			ConsumerProperties properties) {
+			MessageChannel target, AbstractEndpoint endpoint) {
 
 		return new DefaultBinding<MessageChannel>(name, group, target, endpoint) {
 

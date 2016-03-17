@@ -19,17 +19,31 @@ package org.springframework.cloud.stream.binder.gemfire.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
+ * Configuration properties for GemFire binder.
+ *
  * @author Patrick Peralta
  */
 @ConfigurationProperties(prefix = "spring.cloud.stream.binder.gemfire")
 public class GemfireBinderConfigurationProperties extends GemfireProperties {
 
+	/**
+	 * Number of messages to process at a time.
+	 */
 	private int batchSize = 100;
 
+	/**
+	 * Default region type for message consumers (processor and sink modules).
+	 */
 	private String consumerRegionType = "PARTITION";
 
+	/**
+	 * Default region type for message producers (sources).
+	 */
 	private String producerRegionType = "PARTITION_PROXY";
 
+	/**
+	 * Flag for queue persistence.
+	 */
 	private boolean persistentQueue = false;
 
 	public int getBatchSize() {

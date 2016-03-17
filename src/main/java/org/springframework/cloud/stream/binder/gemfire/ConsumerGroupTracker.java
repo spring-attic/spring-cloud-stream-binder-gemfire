@@ -24,6 +24,7 @@ import java.util.Set;
 
 /**
  * Class to keep track of consumer groups and the number of instances.
+ * Instances of this class are serialized and placed into Gemfire.
  * This class is not thread safe.
  *
  * @author Patrick Peralta
