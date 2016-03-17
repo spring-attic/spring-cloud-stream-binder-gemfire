@@ -16,7 +16,8 @@
 
 package org.springframework.cloud.stream.binder.gemfire;
 
-import static org.springframework.cloud.stream.binder.gemfire.GemfireMessageChannelBinder.*;
+import static org.springframework.cloud.stream.binder.gemfire.GemfireMessageChannelBinder.DEFAULT_CONSUMER_GROUP;
+import static org.springframework.cloud.stream.binder.gemfire.GemfireMessageChannelBinder.createMessageRegionName;
 
 import java.util.Collections;
 import java.util.Map;
@@ -31,7 +32,6 @@ import com.gemstone.gemfire.cache.PartitionAttributes;
 import com.gemstone.gemfire.cache.Region;
 import com.gemstone.gemfire.cache.RegionFactory;
 import com.gemstone.gemfire.cache.RegionShortcut;
-import com.gemstone.gemfire.cache.partition.PartitionRegionHelper;
 
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.PartitionHandler;
@@ -200,7 +200,7 @@ public class SendingHandler extends AbstractMessageHandler implements Lifecycle 
 			Region<MessageKey, Message<?>> region = getRegionForGroup(group);
 
 			Assert.notNull(this.partitionHandler, "PartitionHandler not initialized");
-			MessageKey key = this.partitionHandler.isPartitionedModule()
+			MessageKey key = this.properties.isPartitioned()
 					? nextMessageKey(this.partitionHandler.determinePartition(message))
 					: nextMessageKey();
 
@@ -250,8 +250,7 @@ public class SendingHandler extends AbstractMessageHandler implements Lifecycle 
 				if (this.partitionHandler == null) {
 					// this assumes that all regions for all groups have the same number of buckets
 					this.partitionHandler = new PartitionHandler(this.beanFactory, this.evaluationContext,
-							this.partitionSelector, this.properties,
-							PartitionRegionHelper.getPartitionRegionInfo(region).getConfiguredBucketCount());
+							this.partitionSelector, this.properties);
 				}
 			}
 			finally {

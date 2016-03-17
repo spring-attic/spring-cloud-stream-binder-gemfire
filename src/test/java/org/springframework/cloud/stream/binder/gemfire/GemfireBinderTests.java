@@ -48,6 +48,7 @@ import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.data.gemfire.CacheFactoryBean;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.integration.test.util.SocketUtils;
 import org.springframework.messaging.Message;
@@ -352,7 +353,7 @@ public class GemfireBinderTests {
 			SubscribableChannel producerChannel = new ExecutorSubscribableChannel();
 
 			ProducerProperties properties = new ProducerProperties();
-			properties.setPartitionKeyExpression("payload");
+			properties.setPartitionKeyExpression(new SpelExpressionParser().parseExpression("payload"));
 			binder.bindProducer(BINDING_NAME, producerChannel, properties);
 
 			Message<String> message = new GenericMessage<>(MESSAGE_PAYLOAD);

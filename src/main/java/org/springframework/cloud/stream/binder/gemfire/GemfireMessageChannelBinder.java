@@ -344,8 +344,7 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel, 
 	private DefaultBinding<MessageChannel> bindingForProducer(String name, MessageChannel target,
 			AbstractEndpoint endpoint, ProducerProperties properties) {
 
-		return new DefaultBinding<MessageChannel>(name, /*group*/null, target,
-				endpoint, properties) {
+		return new DefaultBinding<MessageChannel>(name, /*group*/null, target, endpoint) {
 
 			@Override
 			protected void afterUnbind() {
@@ -361,7 +360,7 @@ public class GemfireMessageChannelBinder extends AbstractBinder<MessageChannel, 
 			MessageChannel target, AbstractEndpoint endpoint,
 			ConsumerProperties properties) {
 
-		return new DefaultBinding<MessageChannel>(name, group, target, endpoint, properties) {
+		return new DefaultBinding<MessageChannel>(name, group, target, endpoint) {
 
 			@Override
 			protected void afterUnbind() {
