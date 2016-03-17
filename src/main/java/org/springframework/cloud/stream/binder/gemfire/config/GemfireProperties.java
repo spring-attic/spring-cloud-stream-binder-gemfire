@@ -133,7 +133,7 @@ public class GemfireProperties {
 	 * card may not have a unique hostname. An empty string (the default)
 	 * causes the member to listen on the default card for the machine.
 	 */
-	private String bindAddress = "";
+	private String bindAddress;
 
 	// todo: should we include cache-xml-file?
 
@@ -157,7 +157,7 @@ public class GemfireProperties {
 	 * (server-ssl-ciphers, jmx-manager-ssl-ciphers,
 	 * gateway-ssl-ciphers, or http-service-ssl-ciphers) is defined.
 	 */
-	private String clusterSslCiphers = "any";
+	private String clusterSslCiphers;
 
 	/**
 	 * Used for SSL security. Boolean indicating whether to use SSL
@@ -243,7 +243,7 @@ public class GemfireProperties {
 	 * jmx-manager-ssl-protocols, gateway-ssl-protocols, or
 	 * http-service-ssl-protocols) is defined
 	 */
-	private String clusterSslProtocols = "any";
+	private String clusterSslProtocols;
 
 	/**
 	 * Boolean indicating whether to require authentication for
@@ -277,7 +277,7 @@ public class GemfireProperties {
 	 * not conflate (false), or to use the server's conflation
 	 * setting (server).
 	 */
-	private String conflateEvents = "server";
+	private String conflateEvents;
 
 	/**
 	 * Specifies whether sockets are shared by the system
@@ -2275,7 +2275,7 @@ public class GemfireProperties {
 	 */
 	public Properties toProperties() {
 		Properties properties = new Properties();
-		for (Field field : this.getClass().getFields()) {
+		for (Field field : GemfireProperties.class.getDeclaredFields()) {
 			Object o = null;
 			try {
 				o = field.get(this);
