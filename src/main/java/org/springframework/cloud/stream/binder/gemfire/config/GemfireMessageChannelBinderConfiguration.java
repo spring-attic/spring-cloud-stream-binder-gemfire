@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.binder.gemfire.config;
 
-import java.util.Properties;
-
 import com.gemstone.gemfire.cache.Cache;
 import com.gemstone.gemfire.cache.RegionShortcut;
 import org.slf4j.Logger;
@@ -43,22 +41,12 @@ public class GemfireMessageChannelBinderConfiguration {
 
 
 	@Bean
-	Properties gemfireProperties() {
-		Properties gemfireProperties = new Properties();
-		gemfireProperties.setProperty("mcast-port", String.valueOf(properties.getMcastPort()));
-		gemfireProperties.setProperty("log-level", properties.getLogLevel());
-		gemfireProperties.setProperty("locators", properties.getLocators());
-
-		return gemfireProperties;
-	}
-
-	@Bean
 	CacheFactoryBean gemfireCacheBean() {
 		CacheFactoryBean gemfireCache = new CacheFactoryBean();
 
 		gemfireCache.setClose(true);
 		gemfireCache.setLazyInitialize(true);
-		gemfireCache.setProperties(gemfireProperties());
+		gemfireCache.setProperties(this.properties.toProperties());
 		gemfireCache.setUseBeanFactoryLocator(false);
 
 		return gemfireCache;
