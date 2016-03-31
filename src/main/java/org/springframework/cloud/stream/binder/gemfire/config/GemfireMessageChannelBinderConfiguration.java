@@ -32,7 +32,7 @@ import org.springframework.data.gemfire.CacheFactoryBean;
  * @author Patrick Peralta
  */
 @Configuration
-@EnableConfigurationProperties(GemfireBinderConfigurationProperties.class)
+@EnableConfigurationProperties({GemfireBinderConfigurationProperties.class, GemfireProperties.class})
 public class GemfireMessageChannelBinderConfiguration {
 	private static final Logger logger = LoggerFactory.getLogger(GemfireMessageChannelBinderConfiguration.class);
 

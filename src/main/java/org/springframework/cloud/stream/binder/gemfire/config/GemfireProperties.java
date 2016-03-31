@@ -22,6 +22,8 @@ import java.util.Properties;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
 /**
  * Gemfire <a href = "http://gemfire.docs.pivotal.io/docs-gemfire/reference/topics/gemfire_properties.html">properties</a>
  * in a JavaBean style object. This allows for the use of
@@ -30,6 +32,7 @@ import javax.validation.constraints.Min;
  *
  * @author Patrick Peralta
  */
+@ConfigurationProperties(prefix = "spring.cloud.stream.gemfire.binder")
 public class GemfireProperties {
 
 	/**

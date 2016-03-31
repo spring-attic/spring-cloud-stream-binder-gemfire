@@ -23,7 +23,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  * @author Patrick Peralta
  */
-@ConfigurationProperties(prefix = "spring.cloud.stream.binder.gemfire")
+@ConfigurationProperties(prefix = "spring.cloud.stream.gemfire.binder")
 public class GemfireBinderConfigurationProperties extends GemfireProperties {
 
 	/**
