@@ -31,6 +31,8 @@ import com.gemstone.gemfire.cache.asyncqueue.AsyncEventListener;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueue;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueueFactory;
 import com.gemstone.gemfire.cache.partition.PartitionListenerAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.Binding;
@@ -62,6 +64,8 @@ import org.springframework.util.StringUtils;
  */
 public class GemfireMessageChannelBinder
 		extends AbstractBinder<MessageChannel, ConsumerProperties, ProducerProperties> {
+
+	private static final Logger logger = LoggerFactory.getLogger(GemfireMessageChannelBinder.class);
 
 	/**
 	 * SPeL parser.
@@ -174,8 +178,11 @@ public class GemfireMessageChannelBinder
 
 	@Override
 	public void onInit() throws Exception {
-		RegionFactory<String, ConsumerGroupTracker> regionFactory = this.cache.createRegionFactory(RegionShortcut.REPLICATE);
-		this.consumerGroupsRegion = regionFactory.setScope(Scope.GLOBAL).create(CONSUMER_GROUPS_REGION);
+		this.consumerGroupsRegion = this.cache.getRegion(CONSUMER_GROUPS_REGION);
+		if (this.consumerGroupsRegion == null) {
+			RegionFactory<String, ConsumerGroupTracker> regionFactory = this.cache.createRegionFactory(RegionShortcut.REPLICATE);
+			this.consumerGroupsRegion = regionFactory.setScope(Scope.GLOBAL).create(CONSUMER_GROUPS_REGION);
+		}
 	}
 
 	/**
@@ -377,4 +384,14 @@ public class GemfireMessageChannelBinder
 		};
 	}
 
+	@Override
+	public String toString() {
+		return "GemfireMessageChannelBinder{" +
+				"cache=" + cache +
+				", batchSize=" + batchSize +
+				", consumerRegionType=" + consumerRegionType +
+				", producerRegionType=" + producerRegionType +
+				", persistentQueue=" + persistentQueue +
+				'}';
+	}
 }

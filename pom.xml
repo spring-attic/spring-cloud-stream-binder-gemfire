@@ -18,14 +18,10 @@
 		<spring.data.gemfire.version>1.7.0.RELEASE</spring.data.gemfire.version>
 		<gemfire.version>8.2.0</gemfire.version>
 		<oracle.tools.version>2.0.0-RC9</oracle.tools.version>
+		<spring.cloud.deployer.version>1.0.0.BUILD-SNAPSHOT</spring.cloud.deployer.version>
 	</properties>
 
 	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-configuration-processor</artifactId>
-			<optional>true</optional>
-		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream</artifactId>
@@ -35,14 +31,13 @@
 			<artifactId>spring-cloud-stream-codec</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-autoconfigure</artifactId>
-			<optional>true</optional>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-core</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-core</artifactId>
-			<optional>true</optional>
+			<artifactId>spring-cloud-deployer-local</artifactId>
+			<version>${spring.cloud.deployer.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.data</groupId>
@@ -66,24 +61,6 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream-test-support-internal</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.oracle.tools</groupId>
-			<artifactId>oracle-tools-runtime</artifactId>
-			<version>${oracle.tools.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.oracle.tools</groupId>
-			<artifactId>oracle-tools-core</artifactId>
-			<version>${oracle.tools.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.oracle.tools</groupId>
-			<artifactId>oracle-tools-testing-support</artifactId>
-			<version>${oracle.tools.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
