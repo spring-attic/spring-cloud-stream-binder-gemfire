@@ -25,7 +25,7 @@ import javax.validation.constraints.Min;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Gemfire <a href = "http://gemfire.docs.pivotal.io/docs-gemfire/reference/topics/gemfire_properties.html">properties</a>
+ * Gemfire <a href = "https://gemfire.docs.pivotal.io/docs-gemfire/reference/topics/gemfire_properties.html">properties</a>
  * in a JavaBean style object. This allows for the use of
  * <a href="https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html">Spring Boot</a>
  * configuration for Gemfire properties.
@@ -704,7 +704,7 @@ public class GemfireProperties {
 	 * systems that use unique addresses but the same port number.
 	 * <p>
 	 * This default multicast address was assigned by IANA
-	 * (http://www.iana.org/assignments/multicast-addresses). Consult the
+	 * (https://www.iana.org/assignments/multicast-addresses). Consult the
 	 * IANA chart when selecting another multicast address to use with GemFire.
 	 * <p>
 	 * Note: This setting controls only peer-to-peer communication and does

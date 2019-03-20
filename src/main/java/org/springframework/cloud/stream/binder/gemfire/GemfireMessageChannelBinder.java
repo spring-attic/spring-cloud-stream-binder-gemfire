@@ -50,7 +50,7 @@ import org.springframework.util.StringUtils;
 
 
 /**
- * A binder that uses <a href="http://gemfire.docs.pivotal.io/">GemFire</a>
+ * A binder that uses <a href="https://gemfire.docs.pivotal.io/">GemFire</a>
  * for message delivery. Spring Cloud Stream modules that are of type
  * processor or sink will host buckets for a partitioned region used
  * to store {@link Message messages}. This allows for message delivery
