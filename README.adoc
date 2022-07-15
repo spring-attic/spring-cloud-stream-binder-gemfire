@@ -1,3 +1,5 @@
+# This repository is no longer actively maintained by VMware, Inc.
+
 == GemFire Binder for Spring Cloud Stream
 
 The GemFire Binder for Spring Cloud Stream uses the GemFire data grid for storing and routing messages between Spring Cloud Stream modules. The premise for this project is to provide a messaging solution with the following attributes:
